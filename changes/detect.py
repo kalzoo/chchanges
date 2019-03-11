@@ -1,6 +1,7 @@
-from typing import Callable, Tuple, Dict
+from typing import Callable, Tuple, Dict, List
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def l1_cost(data: np.ndarray, weights: np.ndarray) -> float:
@@ -33,6 +34,9 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
     """
     Pruned Exact Linear Time (PELT) - https://arxiv.org/pdf/1101.1438.pdf
 
+    The structure of the partitions dictionary is of the form
+    {last_end_index: {(start_index, end_index): cost}}
+
     :param data:
     :param weights:
     :param jump:
@@ -42,8 +46,6 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
     :return:
     """
     n_samples = data.shape[0]
-    # The structure of the partitions dictionary is of the form
-    # {start_index: {(start_index, end_index): cost}}
 
     # the initial reference partition is the trivial one with the start and end both at 0
     partitions = {0: {(0, 0): 0}}
@@ -78,3 +80,11 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
     # remove the trivial initial reference partition
     best_partition.pop((0, 0))
     return best_partition
+
+
+def plot_breakpoints(data, partition):
+    plt.plot(data)
+    breakpoints = sorted(e for s, e in partition.keys())[:-1]
+    for bkpt in breakpoints:
+        plt.axvline(x=bkpt - 0.5, color='k', linewidth=3, linestyle='--')
+    plt.show()
