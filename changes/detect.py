@@ -1,34 +1,37 @@
-from typing import Callable, Tuple, Dict
+from typing import Callable, Tuple, Dict, List
 
 import numpy as np
+from itertools import cycle
 import matplotlib.pyplot as plt
 
+COLOR_CYCLE = ["#4286f4", "#f44174"]
 
-def l1_cost(data: np.ndarray, weights: np.ndarray) -> float:
+
+def l1_cost(signal: np.ndarray, weights: np.ndarray) -> float:
     """
-    Use the weights on the data to set the median correctly
+    Use the weights on the signal to set the median correctly
 
-    :param data:
+    :param signal:
     :param weights:
     :return:
     """
-    weighted_differences = (data - np.median(data, axis=0)) * weights
+    weighted_differences = (signal - np.median(signal, axis=0)) * weights
     return np.abs(weighted_differences).sum()
 
 
-def l2_cost(data: np.ndarray, weights: np.ndarray) -> float:
+def l2_cost(signal: np.ndarray, weights: np.ndarray) -> float:
     """
-    Use the weights on the data to find the standard deviation correctly.
+    Use the weights on the signal to find the standard deviation correctly.
 
-    :param data:
+    :param signal:
     :param weights:
     :return:
     """
-    weighted_deviation = data.std(axis=0) * weights
-    return (weighted_deviation.mean() * data.shape[0])**2
+    weighted_deviation = signal.std(axis=0) * weights
+    return (weighted_deviation.mean() * signal.shape[0])**2
 
 
-def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
+def pelt(signal: np.ndarray, weights: np.ndarray, penalty: float,
          cost: Callable[[np.ndarray, np.ndarray], float], jump: int = 2, min_size: int = 2
          ) -> Dict[int, Dict[Tuple[int, int], float]]:
     """
@@ -37,7 +40,7 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
     The structure of the partitions dictionary is of the form
     {last_end_index: {(start_index, end_index): cost}}
 
-    :param data:
+    :param signal:
     :param weights:
     :param jump:
     :param min_size:
@@ -45,7 +48,7 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
     :param cost:
     :return:
     """
-    n_samples = data.shape[0]
+    n_samples = signal.shape[0]
 
     # the initial reference partition is the trivial one with the start and end both at 0
     partitions = {0: {(0, 0): 0}}
@@ -61,9 +64,9 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
                 left = partitions[start].copy()
             except KeyError:  # no partition of 0:start exists
                 continue
-            data_segment = data[start:end]
+            signal_segment = signal[start:end]
             weights_segment = weights[start:end]
-            right = {(start, end): cost(data_segment, weights_segment) + penalty}
+            right = {(start, end): cost(signal_segment, weights_segment) + penalty}
             left.update(right)
             subproblems.append(left)
 
@@ -82,9 +85,20 @@ def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
     return best_partition
 
 
-def plot_breakpoints(data, partition):
-    plt.plot(data)
-    breakpoints = sorted(e for s, e in partition.keys())[:-1]
-    for bkpt in breakpoints:
-        plt.axvline(x=bkpt - 0.5, color='k', linewidth=3, linestyle='--')
+def plot_breakpoints(signal: np.ndarray, partition: Dict[int, Dict[Tuple[int, int], float]],
+                     titles: List[str]) -> None:
+    n_samples, n_features = signal.shape
+    figsize = (10, 2 * n_features)
+    fig, axarr = plt.subplots(nrows=n_features, figsize=figsize, sharex=True)
+    if n_features == 1:
+        axarr = [axarr]
+
+    for axe, signal_dimension, title in zip(axarr, signal.T, titles):
+        color_cycle = cycle(COLOR_CYCLE)
+        axe.set_title(title)
+        axe.plot(range(n_samples), signal_dimension)
+
+        for (start, end), color in zip(partition.keys(), color_cycle):
+            axe.axvspan(max(0, start - 0.5), end - 0.5, facecolor=color, alpha=0.2)
+
     plt.show()
