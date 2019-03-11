@@ -1,1 +1,3 @@
 .idea
+changes.egg-info/
+changes/__pycache__/

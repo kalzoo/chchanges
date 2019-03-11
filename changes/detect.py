@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple, Dict
 
 import numpy as np
 
@@ -27,8 +27,9 @@ def l2_cost(data: np.ndarray, weights: np.ndarray) -> float:
     return (weighted_deviation.mean() * data.shape[0])**2
 
 
-def pelt(data: np.ndarray, weights: np.ndarray, jump: int, min_size: int, penalty: float,
-         cost: Callable[[np.ndarray, np.ndarray], float]):
+def pelt(data: np.ndarray, weights: np.ndarray, penalty: float,
+         cost: Callable[[np.ndarray, np.ndarray], float], jump: int = 2, min_size: int = 2
+         ) -> Dict[int, Dict[Tuple[int, int], float]]:
     """
     Pruned Exact Linear Time (PELT) - https://arxiv.org/pdf/1101.1438.pdf
 
@@ -50,7 +51,7 @@ def pelt(data: np.ndarray, weights: np.ndarray, jump: int, min_size: int, penalt
     # all possible breakpoints for the partition starting at 0.
     ends = [k for k in range(0, n_samples, jump) if k >= min_size] + [n_samples]
     for end in ends:
-        start = np.floor((end - min_size) / jump) * jump
+        start = int(np.floor((end - min_size) / jump) * jump)
         starts.append(start)
         subproblems = []
         for start in starts:
@@ -58,10 +59,11 @@ def pelt(data: np.ndarray, weights: np.ndarray, jump: int, min_size: int, penalt
                 left = partitions[start].copy()
             except KeyError:  # no partition of 0:start exists
                 continue
-            data_segment = data[start: end]
-            weights_segment = weights[start: end]
+            data_segment = data[start:end]
+            weights_segment = weights[start:end]
             right = {(start, end): cost(data_segment, weights_segment) + penalty}
-            subproblems.append(left.update(right))
+            left.update(right)
+            subproblems.append(left)
 
         # pick the partition which ends at end and has the least cost.
         partitions[end] = min(subproblems, key=lambda d: sum(d.values()))
@@ -70,4 +72,9 @@ def pelt(data: np.ndarray, weights: np.ndarray, jump: int, min_size: int, penalt
         # only consider the starts which have a cost at least as good as the best found so far.
         starts = [start for start, partition in zip(starts, subproblems)
                   if sum(partition.values()) <= cost_threshold]
-    return partitions
+
+    # the best partition contains all of the other partitions.
+    best_partition = partitions[n_samples]
+    # remove the trivial initial reference partition
+    best_partition.pop((0, 0))
+    return best_partition
