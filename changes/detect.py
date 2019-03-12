@@ -1,8 +1,9 @@
 # Inspired by https://github.com/deepcharles/ruptures under the BSD-2 License
 
-from typing import Callable, Tuple, Dict, List, Iterator
+from typing import Callable, Tuple, Dict, List, Iterator, Generator
 
 import numpy as np
+import scipy.stats
 from itertools import cycle
 import matplotlib.pyplot as plt
 
@@ -88,25 +89,61 @@ def pelt(signal: np.ndarray, weights: np.ndarray, penalty: float,
     return best_partition
 
 
-def bocpd(signal: Iterator, get_hazard, observation_likelihood):
-
-
+def bayesian_online(signal: Iterator, prior_params: dict, changepoint_threshold: float,
+                    get_hazard: Callable, get_posterior: Callable) -> Generator[float, None, None]:
     run_start = 0
-    run_end = -1
+    run_end = 0
     growth = np.ndarray([1])
+    params = prior_params
     for datum in signal:
-        run_end += 1
         run_length = run_end - run_start
 
         if len(growth) == run_length + 1:
             growth = np.resize(growth, (run_length + 1) * 2)
 
-        predictive = get_pdf(datum)
+        posterior, params = get_posterior(datum, params)
         hazard = get_hazard(np.array(range(run_length + 1)))
-        changepoint = np.sum(growth[:run_length] * predictive * hazard)
-        growth[1:run_length + 2] = growth[:run_length + 1] * predictive * (1 - hazard)
+        changepoint = np.sum(growth[:run_length] * posterior * hazard)
+        growth[1:run_length + 2] = growth[:run_length + 1] * posterior * (1 - hazard)
         growth[0] = changepoint
         growth[:run_length + 2] /= np.sum(growth[:run_length + 2])
+
+        if changepoint > changepoint_threshold:
+            run_start = run_end
+            params = prune_params(run_start, params)
+
+        run_end += 1
+        yield changepoint
+
+
+def student_posterior(datum, params):
+    posterior = scipy.stats.t.pdf(x=datum,
+                                  df=2 * params['alpha'],
+                                  loc=params['mu'],
+                                  scale=np.sqrt(params['beta'] * (params['kappa'] + 1) /
+                                                (params['alpha'] * params['kappa'])))
+    alpha = np.concatenate((params['alpha0'], params['alpha'] + 0.5))
+    beta = np.concatenate((params['beta0'],
+                           params['beta'] +
+                           (params['kappa'] * (datum - params['mu'])**2) / (2 * params['kappa'] + 1)
+                           ))
+    kappa = np.concatenate((params['kappa0'], params['kappa'] + 1.))
+    mu = np.concatenate((params['mu'],
+                         (params['kappa'] * params['mu'] + datum) / (params['kappa'] + 1)
+                         ))
+    params['alpha'] = alpha
+    params['beta'] = beta
+    params['kappa'] = kappa
+    params['mu'] = mu
+    return posterior, params
+
+
+def prune_params(cutoff, params):
+    params['alpha'] = params['alpha'][:cutoff + 1]
+    params['beta'] = params['beta'][:cutoff + 1]
+    params['kappa'] = params['kappa'][:cutoff + 1]
+    params['mu'] = params['mu'][:cutoff + 1]
+    return params
 
 
 def constant_hazard(lambda_: float, steps: np.ndarray):

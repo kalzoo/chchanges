@@ -10,4 +10,5 @@ setup(
     author_email='jonathan@rigetti.com',
     description='toolkit for changepoint detection',
     install_requires=['numpy',
+                      'scipy',
                       'matplotlib'])
