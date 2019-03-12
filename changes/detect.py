@@ -1,4 +1,6 @@
-from typing import Callable, Tuple, Dict, List
+# Inspired by https://github.com/deepcharles/ruptures under the BSD-2 License
+
+from typing import Callable, Tuple, Dict, List, Iterator
 
 import numpy as np
 from itertools import cycle
@@ -36,6 +38,7 @@ def pelt(signal: np.ndarray, weights: np.ndarray, penalty: float,
          ) -> Dict[int, Dict[Tuple[int, int], float]]:
     """
     Pruned Exact Linear Time (PELT) - https://arxiv.org/pdf/1101.1438.pdf
+    for offline changepoint detection.
 
     The structure of the partitions dictionary is of the form
     {last_end_index: {(start_index, end_index): cost}}
@@ -83,6 +86,31 @@ def pelt(signal: np.ndarray, weights: np.ndarray, penalty: float,
     # remove the trivial initial reference partition
     best_partition.pop((0, 0))
     return best_partition
+
+
+def bocpd(signal: Iterator, get_hazard, observation_likelihood):
+
+
+    run_start = 0
+    run_end = -1
+    growth = np.ndarray([1])
+    for datum in signal:
+        run_end += 1
+        run_length = run_end - run_start
+
+        if len(growth) == run_length + 1:
+            growth = np.resize(growth, (run_length + 1) * 2)
+
+        predictive = get_pdf(datum)
+        hazard = get_hazard(np.array(range(run_length + 1)))
+        changepoint = np.sum(growth[:run_length] * predictive * hazard)
+        growth[1:run_length + 2] = growth[:run_length + 1] * predictive * (1 - hazard)
+        growth[0] = changepoint
+        growth[:run_length + 2] /= np.sum(growth[:run_length + 2])
+
+
+def constant_hazard(lambda_: float, steps: np.ndarray):
+    return np.full_like(steps, 1./lambda_)
 
 
 def plot_breakpoints(signal: np.ndarray, partition: Dict[int, Dict[Tuple[int, int], float]],
