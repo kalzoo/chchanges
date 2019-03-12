@@ -110,43 +110,36 @@ def bayesian_online(signal: Iterator, prior_params: dict, changepoint_threshold:
 
         if changepoint > changepoint_threshold:
             run_start = run_end
-            params = prune_params(run_start, params)
+            # params = prune_params(run_length - run_start, params)
 
         run_end += 1
         yield changepoint
 
 
-def student_posterior(datum, params):
+def student_posterior(datum: float, params: Dict[str, np.ndarray]
+                      ) -> Tuple[float, Dict[str, np.ndarray]]:
     posterior = scipy.stats.t.pdf(x=datum,
                                   df=2 * params['alpha'],
                                   loc=params['mu'],
                                   scale=np.sqrt(params['beta'] * (params['kappa'] + 1) /
                                                 (params['alpha'] * params['kappa'])))
-    alpha = np.concatenate((params['alpha0'], params['alpha'] + 0.5))
-    beta = np.concatenate((params['beta0'],
-                           params['beta'] +
-                           (params['kappa'] * (datum - params['mu'])**2) / (2 * params['kappa'] + 1)
-                           ))
-    kappa = np.concatenate((params['kappa0'], params['kappa'] + 1.))
-    mu = np.concatenate((params['mu'],
-                         (params['kappa'] * params['mu'] + datum) / (params['kappa'] + 1)
-                         ))
-    params['alpha'] = alpha
-    params['beta'] = beta
-    params['kappa'] = kappa
-    params['mu'] = mu
+
+    params['beta'][1:] += (params['kappa'] * (datum - params['mu'])**2) / (2 * params['kappa'] + 1)
+    params['mu'][1:] = (params['kappa'] * params['mu'][:1] + datum) / (params['kappa'] + 1)
+    params['alpha'][1:] += 0.5
+    params['kappa'][1:] += 1.0
     return posterior, params
 
 
-def prune_params(cutoff, params):
-    params['alpha'] = params['alpha'][:cutoff + 1]
-    params['beta'] = params['beta'][:cutoff + 1]
-    params['kappa'] = params['kappa'][:cutoff + 1]
-    params['mu'] = params['mu'][:cutoff + 1]
+def prune_params(cutoff: int, params: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    params['alpha'] = np.concatenate((params['alpha'][0], params['alpha'][cutoff + 1:]))
+    params['beta'] = np.concatenate((params['beta'][0], params['beta'][cutoff + 1:]))
+    params['kappa'] = np.concatenate((params['kappa'][0], params['kappa'][cutoff + 1:]))
+    params['mu'] = np.concatenate((params['mu'][0], params['mu'][cutoff + 1:]))
     return params
 
 
-def constant_hazard(lambda_: float, steps: np.ndarray):
+def constant_hazard(lambda_: float, steps: np.ndarray) -> np.ndarray:
     return np.full_like(steps, 1./lambda_)
 
 
