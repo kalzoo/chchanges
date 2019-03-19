@@ -1,4 +1,5 @@
-from typing import Iterator, Callable, Generator
+from abc import ABC
+from typing import Callable
 
 import numpy as np
 import scipy.stats
@@ -60,7 +61,15 @@ def constant_hazard(lambda_: float, gap_size: int) -> np.ndarray:
     return np.full(gap_size, 1./lambda_)
 
 
-class StudentT:
+class Posterior(ABC):
+    def pdf(self, data: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+    def update_theta(self, data: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+
+class StudentT(Posterior):
     """Student's t predictive posterior.
     """
     def __init__(self, alpha: float, beta: float, kappa: float, mu: float):
@@ -87,13 +96,15 @@ class StudentT:
         return scipy.stats.t.pdf(x=data,
                                  df=2*self.alpha,
                                  loc=self.mu,
-                                 scale=np.sqrt(self.beta * (self.kappa+1) / (self.alpha * self.kappa)))
+                                 scale=np.sqrt(self.beta * (self.kappa+1) /
+                                               (self.alpha * self.kappa)))
 
     def update_theta(self, data):
         """Bayesian update.
         """
         self.beta = np.concatenate(([self.beta[0]],
-                                    self.beta + (self.kappa * (data - self.mu)**2) / (2. * (self.kappa + 1.))))
+                                    self.beta + (self.kappa * (data - self.mu)**2) /
+                                    (2. * (self.kappa + 1.))))
         self.mu = np.concatenate(([self.mu[0]], (self.kappa * self.mu + data) / (self.kappa + 1)))
         self.kappa = np.concatenate(([self.kappa[0]], self.kappa + 1.))
         self.alpha = np.concatenate(([self.alpha[0]], self.alpha + 0.5))
