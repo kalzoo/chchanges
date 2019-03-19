@@ -1,19 +1,30 @@
 from abc import ABC
-from typing import Callable
 
 import numpy as np
 import scipy.stats
 
 
+class Posterior(ABC):
+    def pdf(self, data: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+    def update_theta(self, data: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+
+class Hazard(ABC):
+    def __call__(self, gap: int) -> float:
+        raise NotImplementedError
+
+
 class Detector:
 
-    def __init__(self, get_hazard: Callable[[int], np.ndarray], observation_likelihood,
-                 delay: int, threshold: float) -> None:
+    def __init__(self, hazard: Hazard, posterior: Posterior, delay: int, threshold: float) -> None:
         self.start = 0
         self.end = 0
         self.growth_probs = np.array([1.])
-        self.get_hazard = get_hazard
-        self.observation_likelihood = observation_likelihood
+        self.hazard = hazard
+        self.posterior = posterior
         self.delay = delay
         self.threshold = threshold
 
@@ -27,19 +38,19 @@ class Detector:
 
         # Evaluate the predictive distribution for the new datum under each of
         # the parameters.  This is the standard thing from Bayesian inference.
-        pred_probs = self.observation_likelihood.pdf(datum)
+        pred_probs = self.posterior.pdf(datum)
 
         # Evaluate the hazard function for this interval
-        hazard = self.get_hazard(run + 1)
+        hazard_value = self.hazard(run + 1)
 
         # Evaluate the probability that there *was* a changepoint and we're
         # accumulating the mass back down at r = 0.
-        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard)
+        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
 
         # Evaluate the growth probabilities - shift the probabilities down and to
         # the right, scaled by the hazard function and the predictive
         # probabilities.
-        self.growth_probs[1:run + 2] = self.growth_probs[0:run + 1] * pred_probs * (1 - hazard)
+        self.growth_probs[1:run + 2] = self.growth_probs[0:run + 1] * pred_probs * (1 - hazard_value)
         # Put back changepoint probability
         self.growth_probs[0] = cp_prob
 
@@ -48,25 +59,19 @@ class Detector:
         self.growth_probs[0:run + 2] /= np.sum(self.growth_probs[0:run + 2])
 
         # Update the parameter sets for each possible run length.
-        self.observation_likelihood.update_theta(datum)
+        self.posterior.update_theta(datum)
 
         changepoint_detected = run >= self.delay and self.growth_probs[self.delay] >= self.threshold
         return changepoint_detected
 
 
-def constant_hazard(lambda_: float, gap_size: int) -> np.ndarray:
-    """Computes the "constant" hazard, that is corresponding
-    to Poisson process.
-    """
-    return np.full(gap_size, 1./lambda_)
+class ConstantHazard:
+    def __init__(self, lambda_: float):
+        self.lambda_ = lambda_
 
-
-class Posterior(ABC):
-    def pdf(self, data: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
-
-    def update_theta(self, data: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
+    def __call__(self, gap: int) -> np.ndarray:
+        """Computes the "constant" hazard, that is corresponding to a Poisson process."""
+        return np.full(gap, 1./self.lambda_)
 
 
 class StudentT(Posterior):
@@ -81,6 +86,8 @@ class StudentT(Posterior):
         :param kappa:
         :param mu:
         """
+        self.definition = {'distribution': "student's t", 'alpha': alpha, 'beta': beta,
+                           'kappa': kappa, 'mu': mu}
         self.alpha = np.array([alpha])
         self.beta = np.array([beta])
         self.kappa = np.array([kappa])
