@@ -5,6 +5,9 @@ import scipy.stats
 
 
 class Posterior(ABC):
+
+    definition = None
+
     def pdf(self, data: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
@@ -13,6 +16,9 @@ class Posterior(ABC):
 
 
 class Hazard(ABC):
+
+    definition = None
+
     def __call__(self, gap: int) -> float:
         raise NotImplementedError
 
@@ -27,6 +33,9 @@ class Detector:
         self.posterior = posterior
         self.delay = delay
         self.threshold = threshold
+        self.definition = ({'delay': delay, 'threshold': threshold}
+                           .update(hazard.definition)
+                           .update(posterior.definition))
 
     def update(self, datum: float) -> bool:
         run = self.end - self.start
@@ -65,9 +74,10 @@ class Detector:
         return changepoint_detected
 
 
-class ConstantHazard:
+class ConstantHazard(Hazard):
     def __init__(self, lambda_: float):
         self.lambda_ = lambda_
+        self.definition = {'lambda': lambda_}
 
     def __call__(self, gap: int) -> np.ndarray:
         """Computes the "constant" hazard, that is corresponding to a Poisson process."""
