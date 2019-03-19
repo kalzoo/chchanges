@@ -1,5 +1,5 @@
 import numpy as np
-from changes.bayesian_online import constant_hazard, StudentT, Detector
+from changes.bayesian_online import ConstantHazard, StudentT, Detector
 
 
 def test_detector():
@@ -9,10 +9,9 @@ def test_detector():
     lambda_ = 100
     delay = 15
 
-    def get_constant_hazard(gap: int):
-        return constant_hazard(lambda_, gap)
+    constant_hazard = ConstantHazard(lambda_)
     student_t_observation_likelihood = StudentT(alpha=0.1, beta=1., kappa=1., mu=0.)
-    detector = Detector(get_constant_hazard, student_t_observation_likelihood, delay, threshold=0.5)
+    detector = Detector(constant_hazard, student_t_observation_likelihood, delay, threshold=0.5)
 
     changepoints = []
     for datum in normal_signal:
