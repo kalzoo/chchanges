@@ -4,47 +4,53 @@ import numpy as np
 import scipy.stats
 
 
-def detect_changepoints(signal: Iterator, get_hazard: Callable[[int], np.ndarray],
-                        observation_likelihood, delay: int, threshold: float
-                        ) -> Generator[bool, None, None]:
-    start = 0
-    end = 0
-    growth_probs = np.array([1.])
-    for x in signal:
-        run = end - start
+class Detector:
+
+    def __init__(self, get_hazard: Callable[[int], np.ndarray], observation_likelihood,
+                 delay: int, threshold: float) -> None:
+        self.start = 0
+        self.end = 0
+        self.growth_probs = np.array([1.])
+        self.get_hazard = get_hazard
+        self.observation_likelihood = observation_likelihood
+        self.delay = delay
+        self.threshold = threshold
+
+    def update(self, datum: float) -> bool:
+        run = self.end - self.start
+        self.end += 1
 
         # allocate enough space
-        if len(growth_probs) == run + 1:
-            growth_probs = np.resize(growth_probs, (run + 1) * 2)
+        if len(self.growth_probs) == run + 1:
+            self.growth_probs = np.resize(self.growth_probs, (run + 1) * 2)
 
         # Evaluate the predictive distribution for the new datum under each of
         # the parameters.  This is the standard thing from Bayesian inference.
-        pred_probs = observation_likelihood.pdf(x)
+        pred_probs = self.observation_likelihood.pdf(datum)
 
         # Evaluate the hazard function for this interval
-        hazard = get_hazard(run + 1)
+        hazard = self.get_hazard(run + 1)
 
         # Evaluate the probability that there *was* a changepoint and we're
         # accumulating the mass back down at r = 0.
-        cp_prob = np.sum(growth_probs[0:run + 1] * pred_probs * hazard)
+        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard)
 
         # Evaluate the growth probabilities - shift the probabilities down and to
         # the right, scaled by the hazard function and the predictive
         # probabilities.
-        growth_probs[1:run + 2] = growth_probs[0:run + 1] * pred_probs * (1 - hazard)
+        self.growth_probs[1:run + 2] = self.growth_probs[0:run + 1] * pred_probs * (1 - hazard)
         # Put back changepoint probability
-        growth_probs[0] = cp_prob
+        self.growth_probs[0] = cp_prob
 
         # Renormalize the run length probabilities for improved numerical
         # stability.
-        growth_probs[0:run + 2] = growth_probs[0:run + 2] / np.sum(growth_probs[0:run + 2])
+        self.growth_probs[0:run + 2] /= np.sum(self.growth_probs[0:run + 2])
 
         # Update the parameter sets for each possible run length.
-        observation_likelihood.update_theta(x)
+        self.observation_likelihood.update_theta(datum)
 
-        changepoint_detected = run >= delay and growth_probs[delay] >= threshold
-        end += 1
-        yield changepoint_detected
+        changepoint_detected = run >= self.delay and self.growth_probs[self.delay] >= self.threshold
+        return changepoint_detected
 
 
 def constant_hazard(lambda_: float, gap_size: int) -> np.ndarray:
