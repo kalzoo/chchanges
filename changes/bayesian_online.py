@@ -1,7 +1,9 @@
 from abc import ABC
+from typing import Optional
 
 import numpy as np
 import scipy.stats
+import matplotlib.pyplot as plt
 
 
 class Posterior(ABC):
@@ -33,11 +35,12 @@ class Detector:
         self.posterior = posterior
         self.delay = delay
         self.threshold = threshold
-        self.definition = ({'delay': delay, 'threshold': threshold}
-                           .update(hazard.definition)
-                           .update(posterior.definition))
 
-    def update(self, datum: float) -> bool:
+        self.definition = dict(delay=delay, threshold=threshold,
+                               **hazard.definition,
+                               **posterior.definition)
+
+    def update(self, datum: np.ndarray) -> bool:
         run = self.end - self.start
         self.end += 1
 
@@ -59,7 +62,8 @@ class Detector:
         # Evaluate the growth probabilities - shift the probabilities down and to
         # the right, scaled by the hazard function and the predictive
         # probabilities.
-        self.growth_probs[1:run + 2] = self.growth_probs[0:run + 1] * pred_probs * (1 - hazard_value)
+        self.growth_probs[1:run + 2] = (self.growth_probs[0:run + 1] *
+                                        pred_probs * (1 - hazard_value))
         # Put back changepoint probability
         self.growth_probs[0] = cp_prob
 
@@ -74,6 +78,15 @@ class Detector:
         return changepoint_detected
 
 
+class Plotter:
+    def __init__(self):
+        self.fig, self.ax = plt.subplots()
+
+    def update(self, x_val: float, y_val: float, yerr: Optional[float] = None):
+        self.ax.scatter(x_val, y_val, c='k', alpha=0.3)
+        plt.pause(0.05)
+
+
 class ConstantHazard(Hazard):
     def __init__(self, lambda_: float):
         self.lambda_ = lambda_
@@ -86,6 +99,8 @@ class ConstantHazard(Hazard):
 
 class StudentT(Posterior):
     """Student's t predictive posterior.
+    https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_t.html
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.t.html#scipy.stats.t
     """
     def __init__(self, alpha: float, beta: float, kappa: float, mu: float):
         """
@@ -96,7 +111,7 @@ class StudentT(Posterior):
         :param kappa:
         :param mu:
         """
-        self.definition = {'distribution': "student's t", 'alpha': alpha, 'beta': beta,
+        self.definition = {'distribution': 'student t', 'alpha': alpha, 'beta': beta,
                            'kappa': kappa, 'mu': mu}
         self.alpha = np.array([alpha])
         self.beta = np.array([beta])
@@ -106,6 +121,7 @@ class StudentT(Posterior):
     def pdf(self, data: np.ndarray) -> np.ndarray:
         """
         PDF of the predictive posterior.
+        This needs some real documentation.
 
         :param data:
         :return:
@@ -118,6 +134,7 @@ class StudentT(Posterior):
 
     def update_theta(self, data):
         """Bayesian update.
+        Find some real documentation for this
         """
         self.beta = np.concatenate(([self.beta[0]],
                                     self.beta + (self.kappa * (data - self.mu)**2) /
