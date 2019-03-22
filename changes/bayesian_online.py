@@ -1,5 +1,6 @@
+from datetime import datetime
 from abc import ABC
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import scipy.stats
@@ -82,8 +83,10 @@ class Plotter:
     def __init__(self):
         self.fig, self.ax = plt.subplots()
 
-    def update(self, x_val: float, y_val: float, yerr: Optional[float] = None):
-        self.ax.scatter(x_val, y_val, c='k', alpha=0.3)
+    def update(self, x_val: Union[float, datetime], y_val: float, yerr: Optional[float] = None):
+        self.ax.errorbar(x_val, y_val, yerr=yerr, fmt='k.', alpha=0.3)
+        if isinstance(x_val, datetime):
+            plt.gcf().autofmt_xdate()
         plt.pause(0.05)
 
 
