@@ -113,7 +113,7 @@ class StudentT(Posterior):
     https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_t.html
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.t.html#scipy.stats.t
     """
-    def __init__(self, alpha: float, beta: float, kappa: float, mu: float):
+    def __init__(self, alpha: float, beta: float, kappa: float, mu: float, plot: bool = False):
         """
         Initialize the distribution with the priors
 
@@ -128,6 +128,10 @@ class StudentT(Posterior):
         self.beta = np.array([beta])
         self.kappa = np.array([kappa])
         self.mu = np.array([mu])
+
+        if plot:
+            self.fig, self.ax = plt.subplots()
+            self.lines = []
 
     def pdf(self, data: np.ndarray) -> np.ndarray:
         """
@@ -162,11 +166,9 @@ class StudentT(Posterior):
         self.alpha = self.alpha[:t + 1]
         self.beta = self.beta[:t + 1]
 
-    def plot(self, ax: plt.Axes) -> None:
+    def update_plot(self) -> None:
         """
         Plots the PDF of the distribution based on the latest parameter values
-
-        :param ax: the axis on which to plot the data
         """
         alpha = self.alpha[-1]
         beta = self.beta[-1]
@@ -175,6 +177,14 @@ class StudentT(Posterior):
         scale = np.sqrt(beta * (kappa + 1) / (alpha * kappa))
         domain = np.linspace(scipy.stats.t.ppf(0.01, df=2*alpha, loc=mu, scale=scale),
                              scipy.stats.t.ppf(0.99, df=2*alpha, loc=mu, scale=scale), 100)
-        ax.plot(domain, scipy.stats.t.pdf(domain, df=2*alpha, loc=mu, scale=scale))
+        image = scipy.stats.t.pdf(domain, df=2*alpha, loc=mu, scale=scale)
+        line = self.ax.plot(image, domain, alpha=0.5, color='r')
+
+        # change the previous plots to black
+        self.lines.extend(line)
+        if len(self.lines) > 1:
+            self.lines[-2].set_color('k')
+            self.lines[-2].set_alpha(0.05)
+        plt.pause(0.05)
 
 
