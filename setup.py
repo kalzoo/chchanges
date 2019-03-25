@@ -11,4 +11,5 @@ setup(
     description='toolkit for changepoint detection',
     install_requires=['numpy',
                       'scipy',
-                      'matplotlib'])
+                      'matplotlib',
+                      'pytest'])

@@ -28,7 +28,7 @@ class Hazard(ABC):
 
 class Detector:
 
-    def __init__(self, hazard: Hazard, posterior: Posterior, delay: int, threshold: float) -> None:
+    def __init__(self, hazard: Hazard, posterior: Posterior, delay: int, threshold: float):
         self.start = 0
         self.end = 0
         self.growth_probs = np.array([1.])
@@ -80,14 +80,22 @@ class Detector:
 
 
 class Plotter:
-    def __init__(self):
+    def __init__(self, bottom: Optional[float] = None, top: Optional[float] = None):
         self.fig, self.ax = plt.subplots()
+        if bottom is not None and top is not None:
+            self.ax.set_ylim(bottom, top)
 
-    def update(self, x_val: Union[float, datetime], y_val: float, yerr: Optional[float] = None):
+    def update(self, x_val: Union[float, datetime], y_val: float,
+               yerr: Optional[float] = None) -> None:
         self.ax.errorbar(x_val, y_val, yerr=yerr, fmt='k.', alpha=0.3)
         if isinstance(x_val, datetime):
             plt.gcf().autofmt_xdate()
         plt.pause(0.05)
+
+    def add_changepoint(self, x_val: Union[float, datetime]) -> None:
+        if isinstance(x_val, datetime):
+            plt.gcf().autofmt_xdate()
+        self.ax.axvline(x_val, alpha=0.5, color='r', linestyle='--')
 
 
 class ConstantHazard(Hazard):
@@ -135,7 +143,7 @@ class StudentT(Posterior):
                                  scale=np.sqrt(self.beta * (self.kappa+1) /
                                                (self.alpha * self.kappa)))
 
-    def update_theta(self, data):
+    def update_theta(self, data: np.ndarray) -> None:
         """Bayesian update.
         Find some real documentation for this
         """
@@ -146,10 +154,27 @@ class StudentT(Posterior):
         self.kappa = np.concatenate(([self.kappa[0]], self.kappa + 1.))
         self.alpha = np.concatenate(([self.alpha[0]], self.alpha + 0.5))
 
-    def prune(self, t):
+    def prune(self, t) -> None:
         """Prunes memory before t.
         """
         self.mu = self.mu[:t + 1]
         self.kappa = self.kappa[:t + 1]
         self.alpha = self.alpha[:t + 1]
         self.beta = self.beta[:t + 1]
+
+    def plot(self, ax: plt.Axes) -> None:
+        """
+        Plots the PDF of the distribution based on the latest parameter values
+
+        :param ax: the axis on which to plot the data
+        """
+        alpha = self.alpha[-1]
+        beta = self.beta[-1]
+        kappa = self.kappa[-1]
+        mu = self.mu[-1]
+        scale = np.sqrt(beta * (kappa + 1) / (alpha * kappa))
+        domain = np.linspace(scipy.stats.t.ppf(0.01, df=2*alpha, loc=mu, scale=scale),
+                             scipy.stats.t.ppf(0.99, df=2*alpha, loc=mu, scale=scale), 100)
+        ax.plot(domain, scipy.stats.t.pdf(domain, df=2*alpha, loc=mu, scale=scale))
+
+

@@ -1,5 +1,6 @@
 import numpy as np
-from changes.bayesian_online import ConstantHazard, StudentT, Detector
+
+from changes.bayesian_online import ConstantHazard, StudentT, Detector, Plotter
 
 
 def test_detector():
@@ -41,3 +42,29 @@ def test_detector():
     assert np.linalg.norm(np.array(changepoints) - expected_changepoints, ord=1) < 2
 
 
+def run_with_plotter():
+    normal_signal = np.random.normal(loc=50e-6, scale=10e-6, size=1000)
+    normal_signal[250:500] += 30e-6
+    normal_signal[500:750] -= 30e-6
+    lambda_ = 100
+    delay = 150
+
+    hazard = ConstantHazard(lambda_)
+    posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6)
+    detector = Detector(hazard, posterior, delay, threshold=0.5)
+    plotter = Plotter(bottom=0., top=100e-6)
+
+    idxs_so_far = []
+    for idx, datum in enumerate(normal_signal):
+        idxs_so_far.append(idx)
+        changepoint_detected = detector.update(datum)
+        plotter.update(idx, datum)
+        if changepoint_detected:
+            changepoint_idx = idxs_so_far[-delay]
+            plotter.add_changepoint(changepoint_idx)
+
+
+if __name__ == "__main__":
+    run_with_plotter()
+    import matplotlib.pyplot as plt
+    plt.show()
