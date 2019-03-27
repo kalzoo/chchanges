@@ -16,17 +16,25 @@ def detect_variance_shift():
     hazard = ConstantHazard(lambda_)
     posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6, plot=True)
     detector = Detector(hazard, posterior, delay, threshold=0.25)
+
     _, data_axis = plt.subplots()
+    data_axis.set_title('Data Stream')
+    data_axis.set_xlabel('Datum index')
+    data_axis.set_ylabel('Datum value')
+
     _, prob_axis = plt.subplots()
+    prob_axis.set_title('Probability Stream')
+    prob_axis.set_xlabel('Datum index')
+    prob_axis.set_ylabel('Probability of changepoint')
 
     idxs_so_far = []
     for idx, datum in enumerate(normal_signal):
         idxs_so_far.append(idx)
         changepoint_detected = detector.update(datum)
         detector.posterior.update_plot()
-        data_axis.plot(idx, datum)
+        data_axis.plot(idx, datum, color='k', alpha=0.15)
         if idx > delay:
-            prob_axis.plot(idx, detector.growth_probs[delay])
+            prob_axis.plot(idx, detector.growth_probs[delay], color='k', alpha=0.15)
         if changepoint_detected:
             changepoint_idx = idxs_so_far[-delay]
             data_axis.axvline(changepoint_idx, alpha=0.5, color='r', linestyle='--')

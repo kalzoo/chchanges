@@ -12,11 +12,18 @@ def detect_mean_shift():
     delay = 150
 
     hazard = ConstantHazard(lambda_)
-    posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6, plot=True)
+    posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6, plot=False)
     detector = Detector(hazard, posterior, delay, threshold=0.25)
+
     _, data_axis = plt.subplots()
+    data_axis.set_title('Data Stream')
+    data_axis.set_xlabel('Datum index')
+    data_axis.set_ylabel('Datum value')
+
     _, prob_axis = plt.subplots()
-    #data_axis.set_ylim(bottom=0, top=100e-6)
+    prob_axis.set_title('Probability Stream')
+    prob_axis.set_xlabel('Datum index')
+    prob_axis.set_ylabel('Probability of changepoint')
 
     idxs_so_far = []
     for idx, datum in enumerate(normal_signal):
@@ -24,8 +31,6 @@ def detect_mean_shift():
         changepoint_detected = detector.update(datum)
         detector.posterior.update_plot()
         data_axis.plot(idx, datum, color='k', alpha=0.15)
-        print(idx)
-        print(datum)
         if idx > delay:
             prob_axis.plot(idx, detector.growth_probs[delay], color='k', alpha=0.15)
         if changepoint_detected:
