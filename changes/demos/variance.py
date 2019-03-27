@@ -30,8 +30,9 @@ def detect_variance_shift():
         if changepoint_detected:
             changepoint_idx = idxs_so_far[-delay]
             data_axis.axvline(changepoint_idx, alpha=0.5, color='r', linestyle='--')
+        plt.pause(0.05)
     plt.show()
 
 
-if __name__ == '__mean__':
+if __name__ == '__main__':
     detect_variance_shift()

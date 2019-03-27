@@ -16,20 +16,24 @@ def detect_mean_shift():
     detector = Detector(hazard, posterior, delay, threshold=0.25)
     _, data_axis = plt.subplots()
     _, prob_axis = plt.subplots()
+    #data_axis.set_ylim(bottom=0, top=100e-6)
 
     idxs_so_far = []
     for idx, datum in enumerate(normal_signal):
         idxs_so_far.append(idx)
         changepoint_detected = detector.update(datum)
         detector.posterior.update_plot()
-        data_axis.plot(idx, datum)
+        data_axis.plot(idx, datum, color='k', alpha=0.15)
+        print(idx)
+        print(datum)
         if idx > delay:
-            prob_axis.plot(idx, detector.growth_probs[delay])
+            prob_axis.plot(idx, detector.growth_probs[delay], color='k', alpha=0.15)
         if changepoint_detected:
             changepoint_idx = idxs_so_far[-delay]
             data_axis.axvline(changepoint_idx, alpha=0.5, color='r', linestyle='--')
+        plt.pause(0.05)
     plt.show()
 
 
-if __name__ == '__mean__':
+if __name__ == '__main__':
     detect_mean_shift()

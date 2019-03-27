@@ -1,6 +1,4 @@
-from datetime import datetime
 from abc import ABC
-from typing import Optional, Union
 
 import numpy as np
 import scipy.stats
@@ -8,6 +6,9 @@ import matplotlib.pyplot as plt
 
 
 class Posterior(ABC):
+    """
+    Abstract class defining the interface for the Posterior distribution
+    """
 
     definition = None
 
@@ -19,6 +20,9 @@ class Posterior(ABC):
 
 
 class Hazard(ABC):
+    """
+    Abstract class defining the interface for the Hazard function.
+    """
 
     definition = None
 
@@ -77,27 +81,6 @@ class Detector:
 
         changepoint_detected = run >= self.delay and self.growth_probs[self.delay] >= self.threshold
         return changepoint_detected
-
-
-class Plotter:
-    """TODO: See if you can delete this."""
-    def __init__(self, bottom: Optional[float] = None, top: Optional[float] = None):
-        self.fig, self.ax = plt.subplots()
-        if bottom is not None and top is not None:
-            self.ax.set_ylim(bottom, top)
-
-    def update(self, x_val: Union[float, datetime], y_val: float,
-               yerr: Optional[float] = None, live: bool = False) -> None:
-        self.ax.errorbar(x_val, y_val, yerr=yerr, fmt='k.', alpha=0.15)
-        if isinstance(x_val, datetime):
-            plt.gcf().autofmt_xdate()
-        if live:
-            plt.pause(0.05)
-
-    def add_changepoint(self, x_val: Union[float, datetime]) -> None:
-        if isinstance(x_val, datetime):
-            plt.gcf().autofmt_xdate()
-        self.ax.axvline(x_val, alpha=0.5, color='r', linestyle='--')
 
 
 class ConstantHazard(Hazard):
@@ -160,7 +143,7 @@ class StudentT(Posterior):
         self.kappa = np.concatenate(([self.kappa[0]], self.kappa + 1.))
         self.alpha = np.concatenate(([self.alpha[0]], self.alpha + 0.5))
 
-    def prune(self, t) -> None:
+    def prune(self, t: int) -> None:
         """Prunes memory before t.
         """
         self.mu = self.mu[:t + 1]
@@ -189,5 +172,3 @@ class StudentT(Posterior):
             self.lines[-2].set_alpha(0.03)
         if live:
             plt.pause(0.05)
-
-
