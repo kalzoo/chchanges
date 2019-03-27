@@ -80,17 +80,19 @@ class Detector:
 
 
 class Plotter:
+    """TODO: See if you can delete this."""
     def __init__(self, bottom: Optional[float] = None, top: Optional[float] = None):
         self.fig, self.ax = plt.subplots()
         if bottom is not None and top is not None:
             self.ax.set_ylim(bottom, top)
 
     def update(self, x_val: Union[float, datetime], y_val: float,
-               yerr: Optional[float] = None) -> None:
-        self.ax.errorbar(x_val, y_val, yerr=yerr, fmt='k.', alpha=0.3)
+               yerr: Optional[float] = None, live: bool = False) -> None:
+        self.ax.errorbar(x_val, y_val, yerr=yerr, fmt='k.', alpha=0.15)
         if isinstance(x_val, datetime):
             plt.gcf().autofmt_xdate()
-        plt.pause(0.05)
+        if live:
+            plt.pause(0.05)
 
     def add_changepoint(self, x_val: Union[float, datetime]) -> None:
         if isinstance(x_val, datetime):
@@ -166,7 +168,7 @@ class StudentT(Posterior):
         self.alpha = self.alpha[:t + 1]
         self.beta = self.beta[:t + 1]
 
-    def update_plot(self) -> None:
+    def update_plot(self, live: bool = False) -> None:
         """
         Plots the PDF of the distribution based on the latest parameter values
         """
@@ -184,7 +186,8 @@ class StudentT(Posterior):
         self.lines.extend(line)
         if len(self.lines) > 1:
             self.lines[-2].set_color('k')
-            self.lines[-2].set_alpha(0.05)
-        plt.pause(0.05)
+            self.lines[-2].set_alpha(0.03)
+        if live:
+            plt.pause(0.05)
 
 
