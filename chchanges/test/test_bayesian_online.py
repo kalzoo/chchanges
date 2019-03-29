@@ -1,6 +1,6 @@
 import numpy as np
 
-from changes.bayesian_online import ConstantHazard, StudentT, Detector
+from chchanges.bayesian_online import ConstantHazard, StudentT, Detector
 
 
 def test_detector():

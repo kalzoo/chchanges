@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='changes',
+    name='chchanges',
     version='',
     packages=[''],
     url='',
