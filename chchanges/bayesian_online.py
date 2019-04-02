@@ -7,15 +7,34 @@ import matplotlib.pyplot as plt
 
 class Posterior(ABC):
     """
-    Abstract class defining the interface for the Posterior distribution
+    Abstract class defining the interface for the Posterior distribution for usage with the
+    Bayesian Detector
     """
 
     definition = None
 
     def pdf(self, data: np.ndarray) -> np.ndarray:
+        """
+        Probability density function for the distribution at data.
+        If the distribution is d-dimensional, then the data array should have length d.
+        If the pruned parameter history has length l, then the returned array should have length l.
+
+        :param data: the data point for which we want to know the probability of sampling from
+            the posterior distribution
+        :return: the probability of sampling the datapoint from each distribution in the
+            pruned parameter history.
+        """
         raise NotImplementedError
 
-    def update_theta(self, data: np.ndarray) -> np.ndarray:
+    def update_theta(self, data: np.ndarray) -> None:
+        raise NotImplementedError
+
+    def prune(self, t: int) -> None:
+        """
+        Remove the parameter history before index t.
+
+        :param t: the index to prune at, e.g. the index of a changepoint.
+        """
         raise NotImplementedError
 
 
@@ -31,6 +50,9 @@ class Hazard(ABC):
 
 
 class Detector:
+    """
+    Performs Bayesian Online Changepoint Detection as defined in https://arxiv.org/abs/0710.3742
+    """
 
     def __init__(self, hazard: Hazard, posterior: Posterior, delay: int, threshold: float):
         self.start = 0
