@@ -4,6 +4,8 @@ from chchanges.bayesian_online import ConstantHazard, StudentT, Detector
 
 
 def test_detector():
+    np.random.seed(0)
+
     # check for small numbers
     normal_signal = np.random.normal(loc=50e-6, scale=1e-6, size=1000)
     normal_signal[250:500] += 30e-6

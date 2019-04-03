@@ -48,7 +48,7 @@ class Posterior(ABC):
 
     def prune(self, t: int) -> None:
         """
-        Remove the parameter history before index t.
+        Remove the parameter history before index t in order to save memory.
 
         :param t: the index to prune at, e.g. the index of a changepoint.
         """
@@ -147,9 +147,13 @@ class Detector:
         changepoint_detected = run >= self.delay and self.growth_probs[self.delay] >= self.threshold
         return changepoint_detected
 
-    def prune(self):
+    def prune(self) -> None:
+        """
+        Remove history older than self.delay indices in the past in order to save memory.
+        """
         self.posterior.prune(self.delay)
         self.growth_probs = self.growth_probs[:self.delay + 1]
+        self.start = self.end - self.delay
 
 
 class ConstantHazard(Hazard):
