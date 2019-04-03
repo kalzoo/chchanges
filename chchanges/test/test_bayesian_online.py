@@ -17,7 +17,10 @@ def test_detector():
 
     changepoints = []
     for datum in normal_signal:
-        changepoints.append(detector.update(datum))
+        changepoint = detector.update(datum)
+        changepoints.append(changepoint)
+        if changepoint:
+            detector.prune()
 
     changepoints = np.argwhere(changepoints).flatten()
     assert len(changepoints) == 3
@@ -36,7 +39,10 @@ def test_detector():
 
     changepoints = []
     for datum in normal_signal:
-        changepoints.append(detector.update(datum))
+        changepoint = detector.update(datum)
+        changepoints.append(changepoint)
+        if changepoint:
+            detector.prune()
 
     changepoints = np.argwhere(changepoints).flatten()
     assert len(changepoints) == 2

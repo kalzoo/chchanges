@@ -7,7 +7,12 @@ import matplotlib.pyplot as plt
 
 class Posterior(ABC):
     """
-    Abstract class defining the interface for the Posterior distribution
+    Abstract class defining the interface for the Posterior distribution.
+
+    In the Bayesian Online Changepoint Detection algorithm, the Posterior
+        P(x_t | r_{t-1}, x_{t-1}^(r))
+    specifies the probability of sampling the next detected data point from the distribution
+    associated with the current regime.
     """
 
     definition = None
@@ -142,6 +147,10 @@ class Detector:
         changepoint_detected = run >= self.delay and self.growth_probs[self.delay] >= self.threshold
         return changepoint_detected
 
+    def prune(self):
+        self.posterior.prune(self.delay)
+        self.growth_probs = self.growth_probs[:self.delay + 1]
+
 
 class ConstantHazard(Hazard):
     def __init__(self, lambda_: float):
@@ -166,7 +175,7 @@ class ConstantHazard(Hazard):
 class StudentT(Posterior):
     def __init__(self, var: float, mean: float, df: float = 1., plot: bool = False):
         """
-        Student's t predictive posterior.
+        Student's T predictive posterior.
         https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_t.html
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.t.html#scipy.stats.t
 
@@ -188,18 +197,29 @@ class StudentT(Posterior):
 
     def pdf(self, data: np.ndarray) -> np.ndarray:
         """
-        PDF of the predictive posterior.
-        This needs some real documentation.
+        The probability density function for the Student's T of the predictive posterior.
 
-        :param data:
-        :return:
+        Note that t.pdf(x, df, loc, scale) is identically equivalent to t.pdf(y, df) / scale
+        with y = (x - loc) / scale. So increased self.var corresponds to increased scale
+        which in turn corresponds to a flatter distribution.
+
+        :param data: the data point for which we want to know the probability of sampling from
+            the posterior distribution.
+        :return: the probability of sampling the datapoint from each distribution in the
+            pruned parameter history.
         """
         return scipy.stats.t.pdf(x=data, df=self.df, loc=self.mean,
                                  scale=np.sqrt(2. * self.var * (self.df+1) / self.df ** 2))
 
     def update_theta(self, data: np.ndarray) -> None:
-        """Bayesian update.
-        Find some real documentation for this
+        """
+        Use new data to update the posterior distribution.
+        The vector of parameters which define the distribution is called theta, hence the name.
+
+        Note that it is important to filter faulty data and outliers before updating theta in
+        order to maintain the stability of the distribution.
+
+        :param data: the datapoint which we want to use to update the distribution.
         """
         next_var = 0.5 * (data - self.mean)**2 * self.df / (self.df + 1.)
         self.var = np.concatenate(([self.var[0]], self.var + next_var))
@@ -207,7 +227,10 @@ class StudentT(Posterior):
         self.df = np.concatenate(([self.df[0]], self.df + 1.))
 
     def prune(self, t: int) -> None:
-        """Prunes memory before t.
+        """
+        Remove the parameter history before index t.
+
+        :param t: the index to prune at, e.g. the index of a changepoint.
         """
         self.mean = self.mean[:t + 1]
         self.df = self.df[:t + 1]
