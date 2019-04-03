@@ -80,8 +80,9 @@ class Detector:
 
 
 class Plotter:
-    def __init__(self, bottom: Optional[float] = None, top: Optional[float] = None):
+    def __init__(self, bottom: Optional[float] = None, top: Optional[float] = None, title=None):
         self.fig, self.ax = plt.subplots()
+        self.ax.set_title(title)
         if bottom is not None and top is not None:
             self.ax.set_ylim(bottom, top)
 
@@ -131,6 +132,7 @@ class StudentT(Posterior):
 
         if plot:
             self.fig, self.ax = plt.subplots()
+            self.ax.set_title('Evolving Distribution')
             self.lines = []
 
     def pdf(self, data: np.ndarray) -> np.ndarray:

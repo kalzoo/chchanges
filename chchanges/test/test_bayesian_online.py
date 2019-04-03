@@ -1,6 +1,6 @@
 import numpy as np
 
-from changes.bayesian_online import ConstantHazard, StudentT, Detector, Plotter
+from chchanges.bayesian_online import ConstantHazard, StudentT, Detector, Plotter
 
 
 def test_detector():
@@ -55,7 +55,9 @@ def run_with_plotter():
     posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6, plot=True)
     detector = Detector(hazard, posterior, delay, threshold=0.25)
     value_plotter = Plotter(bottom=0., top=100e-6)
+    value_plotter.ax.set_title("Values over time")
     probability_plotter = Plotter()
+    probability_plotter.ax.set_title("Changepoint Probabilities over time")
 
     idxs_so_far = []
     for idx, datum in enumerate(normal_signal):
@@ -83,7 +85,9 @@ def variance_run_with_plotter():
     posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6, plot=True)
     detector = Detector(hazard, posterior, delay, threshold=0.25)
     value_plotter = Plotter(bottom=0., top=100e-6)
+    value_plotter.ax.set_title("Values over time")
     probability_plotter = Plotter()
+    probability_plotter.ax.set_title("Changepoint Probabilities over time")
 
     idxs_so_far = []
     for idx, datum in enumerate(normal_signal):
