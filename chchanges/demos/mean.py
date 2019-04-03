@@ -12,7 +12,7 @@ def detect_mean_shift():
     delay = 150
 
     hazard = ConstantHazard(lambda_)
-    posterior = StudentT(alpha=1., beta=1e-12, kappa=1., mu=50e-6, plot=False)
+    posterior = StudentT(var=1e-12, df=1., mean=50e-6, plot=False)
     detector = Detector(hazard, posterior, delay, threshold=0.25)
 
     _, data_axis = plt.subplots()
