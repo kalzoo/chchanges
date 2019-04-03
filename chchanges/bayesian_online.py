@@ -100,8 +100,8 @@ class Detector:
         self.threshold = threshold
 
         self.definition = dict(delay=delay, threshold=threshold,
-                               **hazard.definition,
-                               **posterior.definition)
+                               hazard=hazard.definition,
+                               posterior=posterior.definition)
 
     def update(self, datum: np.ndarray) -> bool:
         """
@@ -184,7 +184,7 @@ class StudentT(Posterior):
         :param var: A measure of the variance.
         :param mean: The mean of the data collected so far.
         :param df: The number of degrees of freedom
-        :param plot: Whether to plot the distribution as it evolves or not.
+        :param plot: Whether to plot the distribution or not.
         """
         self.definition = {'distribution': 'student t', 'var': var, 'df': df, 'mean': mean}
         self.var = np.array([var])
@@ -239,6 +239,8 @@ class StudentT(Posterior):
     def update_plot(self, live: bool = False) -> None:
         """
         Plots the PDF of the distribution based on the latest parameter values
+
+        :param live: If True display the distribution as it evolves, else wait until process stops.
         """
         var = self.var[-1]
         df = self.df[-1]
