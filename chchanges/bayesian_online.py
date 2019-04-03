@@ -170,7 +170,7 @@ class StudentT(Posterior):
         https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_t.html
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.t.html#scipy.stats.t
 
-        Initialize the distribution with initial best guesses for the parameters
+        Initialize the distribution with initial best guesses for the parameters.
 
         :param var: A measure of the variance.
         :param mean: The mean of the data collected so far.
@@ -201,7 +201,7 @@ class StudentT(Posterior):
         """Bayesian update.
         Find some real documentation for this
         """
-        next_var = (self.df * (data - self.mean)**2) / (2. * (self.df + 1.))
+        next_var = 0.5 * (data - self.mean)**2 * self.df / (self.df + 1.)
         self.var = np.concatenate(([self.var[0]], self.var + next_var))
         self.mean = np.concatenate(([self.mean[0]], (self.df * self.mean + data) / (self.df + 1)))
         self.df = np.concatenate(([self.df[0]], self.df + 1.))
