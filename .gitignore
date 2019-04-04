@@ -1,3 +1,4 @@
 .idea
-changes.egg-info/
-changes/__pycache__/
+chchanges.egg-info/
+chchanges/__pycache__/
+*.pyc

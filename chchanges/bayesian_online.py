@@ -197,6 +197,7 @@ class StudentT(Posterior):
 
         if plot:
             self.fig, self.ax = plt.subplots()
+            self.ax.set_title("Distribution over time.")
             self.lines = []
 
     def pdf(self, data: np.ndarray) -> np.ndarray:
