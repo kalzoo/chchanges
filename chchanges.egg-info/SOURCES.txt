@@ -1,7 +1,0 @@
-README.md
-setup.py
-chchanges.egg-info/PKG-INFO
-chchanges.egg-info/SOURCES.txt
-chchanges.egg-info/dependency_links.txt
-chchanges.egg-info/requires.txt
-chchanges.egg-info/top_level.txt
