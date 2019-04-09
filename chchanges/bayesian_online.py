@@ -114,7 +114,7 @@ class Detector:
         run = self.end - self.start
         self.end += 1
 
-        # allocate enough space
+        # Allocate enough space
         if len(self.growth_probs) == run + 1:
             self.growth_probs = np.resize(self.growth_probs, (run + 1) * 2)
 
@@ -130,15 +130,13 @@ class Detector:
         cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
 
         # Evaluate the growth probabilities - shift the probabilities down and to
-        # the right, scaled by the hazard function and the predictive
-        # probabilities.
+        # the right, scaled by the hazard function and the predictive probabilities.
         self.growth_probs[1:run + 2] = (self.growth_probs[0:run + 1] *
                                         pred_probs * (1 - hazard_value))
         # Put back changepoint probability
         self.growth_probs[0] = cp_prob
 
-        # Renormalize the run length probabilities for improved numerical
-        # stability.
+        # normalize the run length probabilities for improved numerical stability.
         self.growth_probs[0:run + 2] /= np.sum(self.growth_probs[0:run + 2])
 
         # Update the parameter sets for each possible run length.

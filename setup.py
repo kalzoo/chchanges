@@ -12,4 +12,5 @@ setup(
     install_requires=['numpy',
                       'scipy',
                       'matplotlib',
-                      'pytest'])
+                      'pytest',
+                      'imageio'])
