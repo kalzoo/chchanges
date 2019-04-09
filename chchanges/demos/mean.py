@@ -1,3 +1,4 @@
+import imageio as imageio
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -36,8 +37,28 @@ def detect_mean_shift():
         if changepoint_detected:
             changepoint_idx = idxs_so_far[-delay]
             data_plotter_ax.axvline(changepoint_idx, alpha=0.5, color='r', linestyle='--')
+        yield prob_plotter_fig, data_plotter_fig, detector.posterior.fig
     plt.show()
 
 
+def make_gifs():
+    prob_images = []
+    data_images = []
+    post_images = []
+    for prob_fig, data_fig, post_fig in detect_mean_shift():
+        prob_image = np.frombuffer(prob_fig.canvas.tostring_rgb(), dtype='uint8')
+        prob_images.append(prob_image.reshape(prob_fig.canvas.get_width_height()[::-1] + (3,)))
+
+        data_image = np.frombuffer(data_fig.canvas.tostring_rgb(), dtype='uint8')
+        data_images.append(data_image.reshape(data_fig.canvas.get_width_height()[::-1] + (3,)))
+
+        post_image = np.frombuffer(post_fig.canvas.tostring_rgb(), dtype='uint8')
+        post_images.append(post_image.reshape(post_fig.canvas.get_width_height()[::-1] + (3,)))
+
+    imageio.mimsave('mean_changepoint_probability.gif', prob_images, fps=20)
+    imageio.mimsave('mean_data_stream.gif', data_images, fps=20)
+    imageio.mimsave('mean_posterior_distribution.gif', post_images, fps=20)
+
+
 if __name__ == '__main__':
-    detect_mean_shift()
+    make_gifs()
