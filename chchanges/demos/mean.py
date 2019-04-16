@@ -6,14 +6,14 @@ from chchanges.bayesian_online import ConstantHazard, StudentT, Detector
 
 
 def detect_mean_shift():
-    normal_signal = np.random.normal(loc=50e-6, scale=10e-6, size=1000)
-    normal_signal[250:500] += 30e-6
-    normal_signal[500:750] -= 30e-6
+    normal_signal = np.random.normal(loc=50, scale=10, size=1000)
+    normal_signal[250:500] += 30
+    normal_signal[500:750] -= 30
     lambda_ = 100
     delay = 150
 
     hazard = ConstantHazard(lambda_)
-    posterior = StudentT(var=1e-12, df=1., mean=50e-6, plot=True)
+    posterior = StudentT(var=1, df=1., mean=50, plot=True)
     detector = Detector(hazard, posterior, delay, threshold=0.25)
 
     data_plotter_fig, data_plotter_ax = plt.subplots()
