@@ -3,26 +3,28 @@ Detect statistically meaningful changes in streams of data via online changepoin
 ---
 For example, we can detect changes in a stream of normally distributed data, where the mean of the distribution is piecewise constant:
 
-The stream of data
+### The stream of data
 ![mean_data_stream](chchanges/demos/mean_data_stream.gif)
 
-The evolving posterior distribution
+### The evolving posterior distribution
 ![mean_posterior_distribution](chchanges/demos/mean_posterior_distribution.gif)
 
-The probability that a changepoint was detected
+### The probability that a changepoint was detected
 ![mean_changepoint_probability](chchanges/demos/mean_changepoint_probability.gif)
 
 To generate these figures, experiment with `chchanges/demos/mean.py`
 
+---
+
 We can also detect changes in the variance of the distribution:
 
-The stream of data
+### The stream of data
 ![variance_data_stream](chchanges/demos/variance_data_stream.gif)
 
-The evolving posterior distribution
+### The evolving posterior distribution
 ![variance_posterior_distribution](chchanges/demos/variance_posterior_distribution.gif)
 
-The probability that a changepoint was detected
+### The probability that a changepoint was detected
 ![variance_changepoint_probability](chchanges/demos/variance_changepoint_probability.gif)
 
 To generate these figures, experiment with `chchanges/demos/variance.py`
