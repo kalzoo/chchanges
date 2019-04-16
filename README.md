@@ -1,15 +1,36 @@
 # chchanges
-## Detect statistically meaningful changes in streams of data.
+Detect statistically meaningful changes in streams of data via online changepoint detection.
+---
+For example, we can detect changes in a stream of normally distributed data, where the mean of the distribution is piecewise constant:
 
-### Detect changes in the mean of normally distributed data
+The stream of data
 ![mean_data_stream](chchanges/demos/mean_data_stream.gif)
 
-Run the mean demo with `python mean.py` in `chchanges/demos`
+The evolving posterior distribution
+![mean_posterior_distribution](chchanges/demos/mean_posterior_distribution.gif)
 
-### Detect changes in the variance of normally distributed data
+The probability that a changepoint was detected
+![mean_changepoint_probability](chchanges/demos/mean_changepoint_probability.gif)
+
+To generate these figures, experiment with `chchanges/demos/mean.py`
+
+We can also detect changes in the variance of the distribution:
+
+The stream of data
 ![variance_data_stream](chchanges/demos/variance_data_stream.gif)
 
-Run the variance demo with `python variance.py` in `chchanges/demos`
+The evolving posterior distribution
+![variance_posterior_distribution](chchanges/demos/variance_posterior_distribution.gif)
+
+The probability that a changepoint was detected
+![variance_changepoint_probability](chchanges/demos/variance_changepoint_probability.gif)
+
+To generate these figures, experiment with `chchanges/demos/variance.py`
+
+### Contributing
+- By adding other Posterior distributions and Hazard functions, you can fine-tune chchanges for your specific application.
+- E.g. a Multivariate Student's T posterior would enable detecting changes in the correlation of multivariate data.
+- Please contribute and expand the range of chchanges uses.
 
 ### References:
 - [Ryan P. Adams, David J.C. MacKay, "Bayesian Online Changepoint Detection" (2007)](https://arxiv.org/abs/0710.3742)
