@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Union
 
 import numpy as np
 import scipy.stats
@@ -21,7 +22,7 @@ class Posterior(ABC):
         """
         self.definition = definition
 
-    def pdf(self, data: np.ndarray) -> np.ndarray:
+    def pdf(self, data: Union[float, np.ndarray]) -> np.ndarray:
         """
         Probability density function for the distribution at data.
         If the distribution is d-dimensional, then the data array should have length d.
@@ -34,7 +35,7 @@ class Posterior(ABC):
         """
         raise NotImplementedError
 
-    def update_theta(self, data: np.ndarray) -> None:
+    def update_theta(self, data: Union[float, np.ndarray]) -> None:
         """
         Use new data to update the posterior distribution.
         The vector of parameters which define the distribution is called theta, hence the name.
@@ -60,7 +61,7 @@ class Hazard(ABC):
     Abstract class defining the interface for the Hazard function.
     """
 
-    def __init__(self, definition):
+    def __init__(self, definition: dict):
         """
         :param definition: the name of the hazard function as well as its initial parameters.
         """
@@ -199,7 +200,7 @@ class StudentT(Posterior):
             self.ax.set_title("Distribution over time.")
             self.lines = []
 
-    def pdf(self, data: np.ndarray) -> np.ndarray:
+    def pdf(self, data: float) -> np.ndarray:
         """
         The probability density function for the Student's T of the predictive posterior.
 
@@ -215,7 +216,7 @@ class StudentT(Posterior):
         return scipy.stats.t.pdf(x=data, df=self.df, loc=self.mean,
                                  scale=np.sqrt(2. * self.var * (self.df+1) / self.df ** 2))
 
-    def update_theta(self, data: np.ndarray) -> None:
+    def update_theta(self, data: float) -> None:
         """
         Use new data to update the posterior distribution.
         The vector of parameters which define the distribution is called theta, hence the name.
