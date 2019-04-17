@@ -15,11 +15,11 @@ class Posterior(ABC):
     associated with the current regime.
     """
 
-    definition = None
-    """
-    The definition should be overwritten with a dictionary containing the name of the distribution
-    as well as its initial parameters.
-    """
+    def __init__(self, definition: dict):
+        """
+        :param definition: the name of the distribution as well as its initial parameters.
+        """
+        self.definition = definition
 
     def pdf(self, data: np.ndarray) -> np.ndarray:
         """
@@ -60,11 +60,11 @@ class Hazard(ABC):
     Abstract class defining the interface for the Hazard function.
     """
 
-    definition = None
-    """
-    The definition should be overwritten with a dictionary containing the name of the hazard 
-    function as well as its initial parameters.
-    """
+    def __init__(self, definition):
+        """
+        :param definition: the name of the hazard function as well as its initial parameters.
+        """
+        self.definition = definition
 
     def __call__(self, gap: int) -> float:
         """
@@ -161,8 +161,8 @@ class ConstantHazard(Hazard):
 
         :param lambda_: The average number of indices between events of the Poisson process.
         """
+        super().__init__(definition={'function': 'constant', 'lambda': lambda_})
         self.lambda_ = lambda_
-        self.definition = {'function': 'constant', 'lambda': lambda_}
 
     def __call__(self, gap: int) -> np.ndarray:
         """
@@ -188,7 +188,8 @@ class StudentT(Posterior):
         :param df: The number of degrees of freedom
         :param plot: Whether to plot the distribution or not.
         """
-        self.definition = {'distribution': 'student t', 'var': var, 'df': df, 'mean': mean}
+        super().__init__(definition={'distribution': 'student t',
+                                     'var': var, 'df': df, 'mean': mean})
         self.var = np.array([var])
         self.df = np.array([df])
         self.mean = np.array([mean])
