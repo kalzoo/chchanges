@@ -59,6 +59,7 @@ class Posterior(ABC):
 class Hazard(ABC):
     """
     Abstract class defining the interface for the Hazard function.
+    See Equation 5 of https://arxiv.org/abs/0710.3742
     """
 
     def __init__(self, definition: dict):
@@ -117,7 +118,7 @@ class Detector:
     def update(self, datum: np.ndarray) -> bool:
         """
         Update the run probabilities based on the new data point and report changepoint if
-        the run probability, delayed by self.delay, is greater than self.threshold
+        the run probability, delayed by self.delay, is greater than self.threshold.
 
         :param datum: the new data point
         :return: Whether a changepoint was detected.
@@ -136,7 +137,7 @@ class Detector:
         # Evaluate Predictive Probability:
         # See Step 3. of https://arxiv.org/abs/0710.3742 Algorithm 1
         # I.e. Determine the probability of observing the datum,
-        # for each of the past distribution parameters.
+        # for each of the past posterior parameter sets.
         pred_probs = self.posterior.pdf(datum)
 
         # Evaluate the hazard function for this run length
@@ -144,21 +145,33 @@ class Detector:
 
         # Calculate Growth Probabilities:
         # See Step 4. of https://arxiv.org/abs/0710.3742 Algorithm 1
-        # Scale probabilities by the hazard function and the predictive probabilities and shift.
-        self.growth_probs[1:run + 2] = (self.growth_probs[0:run + 1] *
-                                        pred_probs * (1 - hazard_value))
+        # self.growth_probs[i] corresponds to the probability of a run length of i,
+        # hence after the new datum, the probability mass at i moves to i + 1,
+        # scaled by (1 - hazard), since hazard is the baseline probability of a changepoint
+        # and scaled by the relative likelihood of measuring the given data point for each of the
+        # past posterior parameter sets.
+        self.growth_probs[1:run + 2] = (self.growth_probs[0:run + 1] * pred_probs
+                                        * (1 - hazard_value))
 
-        # Calculate Changepoint Probabilities:
+        # Calculate Changepoint Probability:
         # See Step 5. of https://arxiv.org/abs/0710.3742 Algorithm 1
-        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
-        self.growth_probs[0] = cp_prob
+        # index 0 of growth probabilities corresponds to a run length of zero, i.e. a changepoint
+        self.growth_probs[0] = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
 
-        # normalize the run length probabilities for improved numerical stability.
+        # Calculate Evidence, Determine Run Length Distribution
+        # See Steps 6. and 7. of https://arxiv.org/abs/0710.3742 Algorithm 1
+        # Intuitively, if a new data point is highly unlikely to fall in the past distribution,
+        # then the corresponding predictive probability is very small.
+        # Then, if the predictive probability at index i is very small, then growth
+        # probabilities after index i will be very small.
+        # And so, after normalizing, growth probabilities before index i will be much larger, and
+        # so the first couple of points after index i should then exceed the threshold,
+        # until the distribution parameters reflect the new data-generating distribution.
         self.growth_probs[0:run + 2] /= np.sum(self.growth_probs[0:run + 2])
 
         # Update Sufficient Statistics:
         # See Step 8. of https://arxiv.org/abs/0710.3742 Algorithm 1
-        # Update the parameter sets for each possible run length.
+        # Update the parameters for each possible run length.
         self.posterior.update_theta(datum)
 
         changepoint_detected = run >= self.delay and self.growth_probs[self.delay] >= self.threshold
@@ -174,6 +187,9 @@ class Detector:
 
 
 class ConstantHazard(Hazard):
+    """
+    See Equation 5 of https://arxiv.org/abs/0710.3742
+    """
     def __init__(self, lambda_: float):
         """
         Computes the constant hazard corresponding to a Poisson process.
@@ -204,7 +220,8 @@ class StudentT(Posterior):
 
         :param var: A measure of the variance.
         :param mean: The mean of the data collected so far.
-        :param df: The number of degrees of freedom
+        :param df: The number of degrees of freedom,
+            generally we start with one observation and hence one degree of freedom.
         :param plot: Whether to plot the distribution or not.
         """
         super().__init__(definition={'distribution': 'student t',
