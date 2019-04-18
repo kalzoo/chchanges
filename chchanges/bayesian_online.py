@@ -79,7 +79,8 @@ class Hazard(ABC):
 
 class Detector:
 
-    def __init__(self, hazard: Hazard, posterior: Posterior, delay: int, threshold: float):
+    def __init__(self, hazard: Hazard, posterior: Posterior, delay: int = 150,
+                 threshold: float = 0.5):
         """
         Performs Bayesian Online Changepoint Detection as defined in https://arxiv.org/abs/0710.3742
 
@@ -88,17 +89,26 @@ class Detector:
         :param posterior: The posterior determines the probability of observing a certain data point
             given the data points observed so far.
         :param delay: The delay determines how many data points after a suspected changepoint must
-            be measured in order to assure numerical stability.
+            be measured in order to assure numerical stability, somewhat arbitrary, select based on
+            the relative importance of detection speed vs. accuracy.
         :param threshold: the threshold value for considering a changepoint detected,
-            somewhat arbitrary, select based on the relative cost of Type 1 vs Type 2 errors
+            somewhat arbitrary, select based on the relative cost of Type 1 vs Type 2 errors.
         """
-        self.start = 0
-        self.end = 0
-        self.growth_probs = np.array([1.])
         self.hazard = hazard
         self.posterior = posterior
         self.delay = delay
         self.threshold = threshold
+
+        # The start index marks the beginning of the current run,
+        # and then end index marks the end of the current run,
+        # where a run consists of all the data points between two changepoints.
+        self.start = 0
+        self.end = 0
+
+        # The (len(growth_probs) - i)-th value in the growth probabilities array records the
+        # probability that there is a changepoint between the ith datum and the i+1th datum.
+        # See Step 1. of https://arxiv.org/abs/0710.3742 Algorithm 1
+        self.growth_probs = np.array([1.])
 
         self.definition = dict(delay=delay, threshold=threshold,
                                hazard=hazard.definition,
@@ -112,34 +122,42 @@ class Detector:
         :param datum: the new data point
         :return: Whether a changepoint was detected.
         """
+        # Observe New Datum:
+        # See Step 2. of https://arxiv.org/abs/0710.3742 Algorithm 1
+
+        # run indicates the number of data points since the last changepoint
         run = self.end - self.start
         self.end += 1
 
-        # Allocate enough space
+        # Allocate enough space, and reduce number of resizings.
         if len(self.growth_probs) == run + 1:
             self.growth_probs = np.resize(self.growth_probs, (run + 1) * 2)
 
-        # Evaluate the predictive distribution for the new datum under each of
-        # the parameters.  This is the standard thing from Bayesian inference.
+        # Evaluate Predictive Probability:
+        # See Step 3. of https://arxiv.org/abs/0710.3742 Algorithm 1
+        # I.e. Determine the probability of observing the datum,
+        # for each of the past distribution parameters.
         pred_probs = self.posterior.pdf(datum)
 
-        # Evaluate the hazard function for this interval
+        # Evaluate the hazard function for this run length
         hazard_value = self.hazard(run + 1)
 
-        # Evaluate the probability that there *was* a changepoint and we're
-        # accumulating the mass back down at r = 0.
-        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
-
-        # Evaluate the growth probabilities - shift the probabilities down and to
-        # the right, scaled by the hazard function and the predictive probabilities.
+        # Calculate Growth Probabilities:
+        # See Step 4. of https://arxiv.org/abs/0710.3742 Algorithm 1
+        # Scale probabilities by the hazard function and the predictive probabilities and shift.
         self.growth_probs[1:run + 2] = (self.growth_probs[0:run + 1] *
                                         pred_probs * (1 - hazard_value))
-        # Put back changepoint probability
+
+        # Calculate Changepoint Probabilities:
+        # See Step 5. of https://arxiv.org/abs/0710.3742 Algorithm 1
+        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
         self.growth_probs[0] = cp_prob
 
         # normalize the run length probabilities for improved numerical stability.
         self.growth_probs[0:run + 2] /= np.sum(self.growth_probs[0:run + 2])
 
+        # Update Sufficient Statistics:
+        # See Step 8. of https://arxiv.org/abs/0710.3742 Algorithm 1
         # Update the parameter sets for each possible run length.
         self.posterior.update_theta(datum)
 
