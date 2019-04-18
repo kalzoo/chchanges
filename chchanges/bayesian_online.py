@@ -10,6 +10,8 @@ class Posterior(ABC):
     """
     Abstract class defining the interface for the Posterior distribution.
 
+    See Equation 2 of https://arxiv.org/abs/0710.3742
+
     In the Bayesian Online Changepoint Detection algorithm, the Posterior
         P(x_t | r_{t-1}, x_{t-1}^(r))
     specifies the probability of sampling the next detected data point from the distribution
@@ -59,7 +61,11 @@ class Posterior(ABC):
 class Hazard(ABC):
     """
     Abstract class defining the interface for the Hazard function.
+
     See Equation 5 of https://arxiv.org/abs/0710.3742
+
+    The hazard provides information on how the occurrence of previous
+        changepoints affects the probability of subsequent changepoints.
     """
 
     def __init__(self, definition: dict):
@@ -189,6 +195,10 @@ class Detector:
 class ConstantHazard(Hazard):
     """
     See Equation 5 of https://arxiv.org/abs/0710.3742
+
+    "In the special case is where Pgap(g) is a discrete exponential (geometric) distribution with
+    timescale λ, the process is memoryless and the hazard function is constant at H(τ) = 1/λ."
+
     """
     def __init__(self, lambda_: float):
         """
@@ -212,6 +222,9 @@ class ConstantHazard(Hazard):
 class StudentT(Posterior):
     def __init__(self, var: float, mean: float, df: float = 1., plot: bool = False):
         """
+        The Student's T distribution is the conjugate prior to the normal distribution:
+        see https://people.eecs.berkeley.edu/~jordan/courses/260-spring10/lectures/lecture5.pdf
+
         Student's T predictive posterior.
         https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_t.html
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.t.html#scipy.stats.t
