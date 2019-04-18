@@ -1,4 +1,5 @@
 .idea
 chchanges.egg-info/
 chchanges/__pycache__/
+pip-wheel-metadata/
 *.pyc
