@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "chchanges"
-version = "0.1.0"
+version = "1.0.2"
 description = "Detect statistically meaningful changes in streams of data."
 authors = ["Jonathan Ward <jon.ward.me@gmail.com>"]
 license = "MIT"
+exclude = ["chchanges/demos/*.gif"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.6"
 numpy = "^1.16"
 scipy = "^1.2"
 matplotlib = "^3.0"
