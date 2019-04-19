@@ -55,12 +55,9 @@ def make_gifs():
         post_image = np.frombuffer(post_fig.canvas.tostring_rgb(), dtype='uint8')
         post_images.append(post_image.reshape(post_fig.canvas.get_width_height()[::-1] + (3,)))
 
-    imageio.mimsave('mean_changepoint_probability.gif', prob_images, fps=20, palettesize=4,
-                    subrectangles=True)
-    imageio.mimsave('mean_data_stream.gif', data_images, fps=20, palettesize=4,
-                    subrectangles=True)
-    imageio.mimsave('mean_posterior_distribution.gif', post_images, fps=20, palettesize=4,
-                    subrectangles=True)
+    imageio.mimsave('mean_changepoint_probability.gif', prob_images, fps=30, subrectangles=True)
+    imageio.mimsave('mean_data_stream.gif', data_images, fps=30, subrectangles=True)
+    imageio.mimsave('mean_posterior_distribution.gif', post_images, fps=30, subrectangles=True)
 
 
 if __name__ == '__main__':

@@ -14,21 +14,6 @@ For example, we can detect changes in a stream of normally distributed data, whe
 
 To generate these figures, experiment with `chchanges/demos/mean.py`
 
----
-
-We can also detect changes in the variance of the distribution:
-
-### The stream of data
-![variance_data_stream](chchanges/demos/variance_data_stream.gif)
-
-### The evolving posterior distribution
-![variance_posterior_distribution](chchanges/demos/variance_posterior_distribution.gif)
-
-### The probability that a changepoint was detected
-![variance_changepoint_probability](chchanges/demos/variance_changepoint_probability.gif)
-
-To generate these figures, experiment with `chchanges/demos/variance.py`
-
 ### Contributing
 - By adding other Posterior distributions and Hazard functions, you can fine-tune chchanges for your specific application.
 - E.g. a Multivariate Student's T posterior would enable detecting changes in the correlation of multivariate data.
