@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chchanges"
-version = "1.0.2"
+version = "1.0.3"
 description = "Detect statistically meaningful changes in streams of data."
 authors = ["Jonathan Ward <jon.ward.me@gmail.com>"]
 license = "MIT"
