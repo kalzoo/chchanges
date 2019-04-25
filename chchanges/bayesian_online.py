@@ -149,6 +149,11 @@ class Detector:
         # Evaluate the hazard function for this run length
         hazard_value = self.hazard(run + 1)
 
+        # Calculate Changepoint Probability:
+        # See Step 5. of https://arxiv.org/abs/0710.3742 Algorithm 1
+        # index 0 of growth probabilities corresponds to a run length of zero, i.e. a changepoint
+        cp_prob = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
+
         # Calculate Growth Probabilities:
         # See Step 4. of https://arxiv.org/abs/0710.3742 Algorithm 1
         # self.growth_probs[i] corresponds to the probability of a run length of i,
@@ -159,10 +164,8 @@ class Detector:
         self.growth_probs[1:run + 2] = (self.growth_probs[0:run + 1] * pred_probs
                                         * (1 - hazard_value))
 
-        # Calculate Changepoint Probability:
-        # See Step 5. of https://arxiv.org/abs/0710.3742 Algorithm 1
-        # index 0 of growth probabilities corresponds to a run length of zero, i.e. a changepoint
-        self.growth_probs[0] = np.sum(self.growth_probs[0:run + 1] * pred_probs * hazard_value)
+        # Store changepoint probability
+        self.growth_probs[0] = cp_prob
 
         # Calculate Evidence, Determine Run Length Distribution
         # See Steps 6. and 7. of https://arxiv.org/abs/0710.3742 Algorithm 1

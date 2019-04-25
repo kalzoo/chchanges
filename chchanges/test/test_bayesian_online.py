@@ -14,7 +14,7 @@ def test_detector():
     delay = 150
 
     hazard = ConstantHazard(lambda_)
-    posterior = StudentT(var=1e-12, df=1., mean=50e-6)
+    posterior = StudentT(var=1e-12, mean=50e-6)
     detector = Detector(hazard, posterior, delay, threshold=0.5)
 
     changepoints = []
