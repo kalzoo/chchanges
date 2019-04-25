@@ -1,6 +1,7 @@
 # chchanges
 Detect statistically meaningful changes in streams of data via online changepoint detection.
 ---
+[![Build Status](https://semaphoreci.com/api/v1/jonathanward/chchanges/branches/master/badge.svg)](https://semaphoreci.com/jonathanward/chchanges)
 For example, we can detect changes in a stream of normally distributed data, where the mean of the distribution is piecewise constant:
 
 ### The stream of data
