@@ -30,13 +30,14 @@ def test_detector():
     assert np.linalg.norm(np.array(changepoints) - expected_changepoints, ord=1) < 3
 
     # check for large numbers
-    normal_signal = np.random.normal(loc=0., scale=0.1e6, size=1000)
-    normal_signal[333:666] += 10e6
+    normal_signal = np.random.normal(loc=50e6, scale=1e6, size=1000)
+    normal_signal[250:500] += 30e6
+    normal_signal[500:750] -= 30e6
     lambda_ = 100
     delay = 150
 
     hazard = ConstantHazard(lambda_)
-    posterior = StudentT(var=1e10, df=1., mean=50e-6)
+    posterior = StudentT(var=1e12, mean=50e6)
     detector = Detector(hazard, posterior, delay, threshold=0.5)
 
     changepoints = []
@@ -47,6 +48,6 @@ def test_detector():
             detector.prune()
 
     changepoints = np.argwhere(changepoints).flatten()
-    assert len(changepoints) == 2
-    expected_changepoints = np.array([333, 666]) + delay - 1
-    assert np.linalg.norm(np.array(changepoints) - expected_changepoints, ord=1) < 2
+    assert len(changepoints) == 3
+    expected_changepoints = np.array([250, 500, 750]) + delay - 1
+    assert np.linalg.norm(np.array(changepoints) - expected_changepoints, ord=1) < 3
